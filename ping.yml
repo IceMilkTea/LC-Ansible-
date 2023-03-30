@@ -1,6 +1,13 @@
 ---
 - name: ping module demo
-  hosts: all
+  hosts: 10.1.0.61
+  gather_facts: no
+  
+  
   tasks:
     - name: test connection
       ansible.builtin.ping:
+
+
+
+
