@@ -1,6 +1,6 @@
 ---
 - name: ping module demo
-  hosts: 10.1.0.61
+  hosts: 10.1.0.76
   gather_facts: no
   
   
