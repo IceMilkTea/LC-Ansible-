@@ -3,7 +3,7 @@
   hosts: 10.1.0.61
   become: true
   gather_facts: false
-  remote_user: ec2-user@ip-10-1-0-61
+  remote_user: ec2-user
   
 
   tasks:
