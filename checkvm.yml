@@ -1,0 +1,21 @@
+---
+- name: Check if VM is running on AWS
+  hosts: 10.1.0.61
+  connection: ssh
+  gather_facts: no
+
+  vars:
+    aws_region: us-east-1
+    aws_keypair_name: lc-aaponaws-mar2023
+    instance_id: i-0f0973f015c2186a8
+
+  tasks:
+    - name: Get EC2 instance information
+      ec2_instance_info:
+        region: "{{ region }}"
+        instance_ids: "{{ instance_id }}"
+      register: ec2_info
+
+    - name: Print instance state
+      debug:
+        var: ec2_info.instances[0].state.name
