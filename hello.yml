@@ -2,7 +2,7 @@
 - name: Hello World Sample
   hosts: 10.1.0.61
   gather_facts: no
-  connection: ssh
+  
   
   tasks:
     - name: Hello Message
