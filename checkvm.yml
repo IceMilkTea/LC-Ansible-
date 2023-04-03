@@ -1,6 +1,6 @@
 ---
 - name: Update packages on remote host
-  hosts: 10.1.0.49
+  hosts: all
   become: true
   gather_facts: false
   remote_user: ec2-user
