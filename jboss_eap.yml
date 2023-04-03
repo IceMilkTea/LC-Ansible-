@@ -1,58 +1,74 @@
 ---
-- name: "JBoss EAP installation and configuration"
-  hosts: "{{ hosts_group_name | default('localhost') }}"
-  become: yes
-  vars:
-    wildfly_install_workdir: '/opt'
-    wildfly_version: '7.4'
-    install_name: jboss-eap
-    wildfly_archive_filename: "{{ install_name }}-{{ wildfly_version }}.zip"
-    wildfly_user: "{{ install_name }}"
-    wildfly_config_base: standalone-ha.xml
-    wildfly_home: "{{ wildfly_install_workdir }}/{{ install_name }}-{{ wildfly_version }}"
-    jboss_eap_rhn_id: 99481
-
-    instance_http_ports:
-      - 8180
-      - 8280
-      - 8380
-    app:
-      name: 'info-1.1.war'
-      url: 'https://drive.google.com/uc?export=download&id=1w9ss5okctnjUvRAxhPEPyC7DmbUwmbhb'
-  collections:
-    - middleware_automation.redhat_csp_download
-    - middleware_automation.wildfly
-  roles:
-    - redhat_csp_download
-    - wildfly_install
+- name: JBoss EAP installation
+  hosts: jboss-host
+  become: true
   tasks:
-
-    - name: "Set up for WildFly instance {{ item }}"
-      include_role:
-        name: wildfly_systemd
-      vars:
-        wildfly_config_base: 'standalone-ha.xml'
-        wildfly_basedir_prefix: "/opt/{{ inventory_hostname }}"
-        wildfly_config_name: "{{ install_name }}"
-        wildfly_port_range_offset: -1
-        wildfly_instance_name: "{{ install_name }}"
-        instance_id: "{{ item }}"
-        service_systemd_env_file: "/etc/eap-{{ item }}.conf"
-        service_systemd_conf_file: "/usr/lib/systemd/system/jboss-eap-{{ item }}.service"
-      loop: "{{ range(0,3) | list }}"
-  post_tasks:    
-
-    - set_fact:
-            instance_http_ports:
-                - 8180
-                - 8280
-                - 8380
-    - wait_for:
-        port: "{{ item }}"
-      loop: "{{ instance_http_ports }}"
-
-    - name: "Checks that WildFly server is running and accessible"
+    - name: Download JBoss EAP binaries
       get_url:
-        url: "http://localhost:{{ item }}/"
-        dest: '/dev/null'
-      loop: "{{ instance_http_ports }}" 
+        url: <repository URL where you stored JBoss EAP>
+        url_username: user
+        url_password: password
+        dest: /opt
+
+    - name: Unzip the downloaded ZIP file
+      unarchive:
+        src: /opt/jboss-eap-7.4.zip
+        dest: /opt
+        remote_arc: yes
+
+    - name: Create JBoss EAP Group
+      group:
+        name: jboss-group
+        system: yes
+        state: present
+ 
+    - name: Create JBoss EAP user
+      user:
+        name: jboss-user
+        group: jboss-group
+        password: pa$$w0rd
+        home: /opt/jboss-eap-7.4
+        shell: "/bin/bash"
+
+   - name: Change owner & group of JBoss EAP directory
+     file:
+       path: /opt/jboss-eap-7.4
+       owner: jboss-user
+       group: jboss-group
+       recurse: yes
+
+   - name: Edit JBoss EAP configuration file
+     lineinfile:
+       state: present
+       path: /opt/jboss-eap-7.4/bin/init.d/jboss-eap.conf
+       regexp: "{{ item.regexp }}"
+       line: "{{ item.line }}"
+     with_items:
+       - {regexp: "^# JAVA_HOME=", line: 'JAVA_HOME="/opt/jdk-18.0.2.1"'}
+       - {regexp: "^# JBOSS_HOME=", line: 'JBOSS_HOME="/opt/jboss-eap-7.4"'}
+       - {regexp: "^# JBOSS_USER=", line: 'JBOSS_USER=jboss-user'}
+
+   - name: Update /etc/profile with JBOSS_HOME variable
+     lineinfile:
+       path: /etc/profile
+       state: present
+       line: "{{ item }}"
+     with_items:
+       - 'export JBOSS_HOME="/opt/jboss-eap-7.4"'
+       - 'export PATH=$PATH:$JBOSS_HOME/bin'
+
+   - name: Configure JBoss EAP as a service
+     command:
+       chdir: /opt/jboss-eap-7.4
+       cmd: "{{item }}"
+     with_items:
+       - cp /opt/jboss-eap-7.4/bin/init.d/jboss-eap.conf /etc/default/
+       - cp /opt/jboss-eap-7.4/bin/init.d/jboss-eap-rhel.sh /etc/init.d/
+       - restorecon /etc/init.d/jboss-eap-rhel.sh
+       - chkconfig --add jboss-eap-rhel.sh 
+
+   - name: Start JBoss EAP Service
+     service:
+       name: jboss-eap-rhel
+       state: started
+       enabled: yes
