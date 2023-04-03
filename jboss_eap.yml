@@ -5,9 +5,9 @@
   tasks:
     - name: Download JBoss EAP binaries
       get_url:
-        url: <repository URL where you stored JBoss EAP>
-        url_username: user
-        url_password: password
+        url: "https://drive.google.com/file/d/1E3rVr7Q23T6D96g8HayfNsCXoMs6pk_Y/view?usp=share_link"
+        url_username: lseet@redhat.com
+        url_password: !S33tLengShanice
         dest: /opt
 
     - name: Unzip the downloaded ZIP file
