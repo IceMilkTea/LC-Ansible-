@@ -8,7 +8,7 @@
 
   tasks:
     - name: Run yum update
-      yum:
+      dnf:
         name: '*'
         state: latest
       become: true
