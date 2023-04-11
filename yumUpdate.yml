@@ -7,8 +7,11 @@
   
 
   tasks:
-    - name: Run yum update
-      dnf:
+    - name: Upgrade all packages
+      ansible.builtin.yum:
         name: '*'
         state: latest
       become: true
+
+
+
