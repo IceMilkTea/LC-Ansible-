@@ -1,0 +1,38 @@
+---
+- name: Patching Playbook
+  hosts: localhost
+  gather_facts: yes
+  become: yes
+
+  tasks:
+    - name: Update package cache
+      package_facts:
+        manager: auto
+      register: package_cache
+
+    - name: Install security updates
+      package:
+        name: '*'
+        state: latest
+      when: "'security' in package_cache.updates|flatten|map(attribute='advisory_severity')|list"
+
+    - name: Reboot if necessary
+      command:
+        cmd: "shutdown -r now"
+      async: 1
+      poll: 0
+      when: "'security' in package_cache.updates|flatten|map(attribute='advisory_severity')|list"
+
+    - name: Wait for system to come back online
+      wait_for_connection:
+        delay: 15
+        timeout: 300
+      when: "'security' in package_cache.updates|flatten|map(attribute='advisory_severity')|list"
+
+    - name: Verify system is up after reboot
+      wait_for:
+        timeout: 300
+        host: "{{ inventory_hostname }}"
+        port: 22
+        state: started
+      when: "'security' in package_cache.updates|flatten|map(attribute='advisory_severity')|list"
