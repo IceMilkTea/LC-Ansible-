@@ -1,5 +1,5 @@
 ---
-  - name: Setup an instance for testing
+- name: Setup an instance for testing
     amazon.aws.ec2_instance:
       name: '{{ resource_prefix }}'
       instance_type: t2.nano
