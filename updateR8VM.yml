@@ -1,6 +1,10 @@
 ---
 - name: Update RHEL 8
   hosts: 10.1.0.246
+  var:
+    aws_region: us-east-1
+    aws_keypair_name: lc-aaponaws-apr2023
+   
   gather_facts: no
   become: yes
   tasks:
